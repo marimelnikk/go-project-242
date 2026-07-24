@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	pathsize "code"
+	code "code"
 
 	"github.com/urfave/cli/v3"
 )
@@ -40,16 +40,14 @@ func main() {
 			path := cmd.Args().First()
 			all := cmd.Bool("all")
 			recursive := cmd.Bool("recursive")
+			human := cmd.Bool("human")
 
-			size, err := pathsize.GetPathSize(path, all, recursive)
+			size, err := code.GetPathSize(path, recursive, human, all)
 			if err != nil {
 				return err
 			}
 
-			human := cmd.Bool("human")
-			sizeStr := pathsize.FormatSize(size, human)
-
-			fmt.Printf("%s\t%s\n", sizeStr, path)
+			fmt.Printf("%s\t%s\n", size, path)
 			return nil
 		},
 	}

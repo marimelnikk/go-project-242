@@ -1,18 +1,19 @@
-package pathsize
+package code
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"strconv"
 )
 
-func GetPathSize(path string, all, recursive bool) (int64, error) {
+func GetPathSize(path string, recursive, human, all bool) (string, error) {
 	var size int64
 
 	fi, err := os.Lstat(path)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	if fi.Mode().IsRegular() {
@@ -22,7 +23,7 @@ func GetPathSize(path string, all, recursive bool) (int64, error) {
 	if fi.IsDir() {
 		entries, err := os.ReadDir(path)
 		if err != nil {
-			return 0, err
+			return "", err
 		}
 
 		for _, entry := range entries {
@@ -37,11 +38,16 @@ func GetPathSize(path string, all, recursive bool) (int64, error) {
 
 			if recursive && info.Mode().IsDir() {
 				subPath := filepath.Join(path, entry.Name())
-				subSize, err := GetPathSize(subPath, all, recursive)
+				subSize, err := GetPathSize(subPath, recursive, false, all)
 				if err != nil {
 					continue
 				}
-				size += subSize
+
+				convertedSize, err := strconv.ParseInt(subSize, 10, 64)
+				if err != nil {
+					continue
+				}
+				size += convertedSize
 			}
 
 			if info.Mode().IsRegular() {
@@ -49,12 +55,17 @@ func GetPathSize(path string, all, recursive bool) (int64, error) {
 			}
 		}
 	}
-	return size, nil
+	strSize := fmt.Sprintf("%d", size)
+	
+	return FormatSize(strSize, human), nil
 }
 
-func FormatSize(size int64, human bool) string {
+func FormatSize(size string, human bool) string {
 	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB"}
-	floatSize := float64(size)
+	floatSize, err := strconv.ParseFloat(size, 64)
+	if err != nil {
+		return ""
+	}
 
 	if human {
 		for i, u := range units {
@@ -67,5 +78,5 @@ func FormatSize(size int64, human bool) string {
 			floatSize /= 1024
 		}
 	}
-	return fmt.Sprintf("%dB", size)
+	return fmt.Sprintf("%sB", size)
 }
